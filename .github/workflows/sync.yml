@@ -1,3 +1,4 @@
+# dedek-youtube daily sync (yt-dlp -> Combined)
 name: sync
 
 on:
