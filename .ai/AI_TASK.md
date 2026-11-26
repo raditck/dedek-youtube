@@ -36,8 +36,8 @@ Spreadsheet: https://docs.google.com/spreadsheets/d/1OTAoHRg0ijCUS9YdZG2Vl8a4Wsa
 - [x] 7. Drawers: history/all-videos/search, settings, empty state, confirmations.
 - [x] 8. Spreadsheet prep: `tools/init_sheets.gs` (paste into Apps Script, run once) creates/headers `Video`, `Channel`, `Exclude`, `Combined` and sets link sharing.
 - [x] 9. Daily sync: GitHub Actions + yt-dlp — `tools/sync.py` + `.github/workflows/sync.yml` (user chose C).
-- [ ] 10. Deploy: GitHub Pages + `dedek.tantua.com`, HTTPS.
-- [ ] 11. Verify manually (play/next/prev/repeat/search/settings, reload persistence) and record results.
+- [x] 10. Deploy: GitHub Pages + `dedek.tantua.com` (Cloudflare proxy, TLS ok), HTTPS verified.
+- [x] 11. Verify manually — done in Chrome via Browser MCP; results below.
 
 # Progress
 
@@ -58,6 +58,15 @@ Confirmed decisions (from share):
 - Removed/excluded video: drop from active pool, KEEP play count + history; if playing now, let it finish.
 - Nav: reels-style vertical swipe + keyboard Up/Down(prev/next), Space, R(repeat), H(history), F(fullscreen).
 - History drawer: side panel, newest-first, thumbnail+title+channel+count, cap 100 events; plus "All Videos" view + search over title/channel; click plays now +1.
+
+## Deploy + verify (2026-11-26)
+
+- `https://dedek.tantua.com/` → 200 via Cloudflare → GitHub Pages (`x-github-request-id` present), TLS valid.
+- Local DNS is `ublockdns` (127.0.0.1:53); `tantua.com` allowlisted, resolves correctly.
+- Browser-verified: gate, playback (`state=playing`, real `videoplayback`), next/prev/keyboard, search+click, auto-advance on ENDED, counts (strict-lowest → random tie), history, stats, Update List (keeps counts), Refresh List (confirm → clears → reload).
+- **Bug fixed:** the YouTube iframe filled `#stage` and swallowed all pointer/wheel events, so swipe never fired. Added `#gesture` transparent layer (z-index 2) over the iframe + tap→play/pause. Commit `8933609`.
+- Sync provisioned without manual Google steps: GCP project `dedek-yt-sync-261126`, SA `dedek-sync@dedek-yt-sync-261126.iam.gserviceaccount.com` (Editor on the sheet), Sheets API enabled. Secrets set: `SPREADSHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`.
+- `sync.yml` ran successfully and rewrote `Combined`; daily cron 03:17 UTC active. Note: a workflow file can land on `main` without being indexed — any later push re-registers it.
 - Unplayable video: auto-skip, no blacklist, no count bump, stays in library.
 - Empty state: message + Retry + Update List.
 - Settings drawer: Refresh List (reset local stats), Update List (sync pool, preserve stats), Reset counts, Reset history, total videos, last sync; destructive actions need confirm.
